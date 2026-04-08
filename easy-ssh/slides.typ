@@ -200,6 +200,143 @@ The LLM will handle:
 
 // ============================================================
 
+== CLI Workflow — From Init to Results
+
+#v(0.3em)
+
+#{
+  let step(num, cmd, desc, color) = rect(
+    width: 100%,
+    fill: color.lighten(90%),
+    stroke: 1.2pt + color,
+    radius: 6pt,
+    inset: (x: 0.8em, y: 0.45em),
+  )[
+    #grid(
+      columns: (auto, 1fr),
+      column-gutter: 0.6em,
+      align: horizon,
+      text(weight: "bold", fill: color, size: 1.2em)[#num],
+      [
+        #raw(cmd, lang: "bash") #h(0.5em)
+        #text(size: 0.82em)[— #desc]
+      ],
+    )
+  ]
+
+  let sep = {
+    set align(center)
+    text(fill: ok-color, weight: "bold", size: 0.85em)[#sym.arrow.b]
+  }
+
+  stack(
+    dir: ttb,
+    spacing: 0.12em,
+    step("①", "easy-ssh init", [Interactive setup: prompts for host + remote dir, writes `.easy-ssh.conf`], emph-color),
+    sep,
+    step("②", "easy-ssh push", [rsync local code #sym.arrow.r server (additive — never deletes remote files)], ok-color),
+    sep,
+    step("③", "easy-ssh run \"cmd\"", [Push + execute + #emph-text[wait]. Streams stdout/stderr back to your terminal], emph-color),
+    sep,
+    step("④", "easy-ssh submit \"cmd\"", [Push + launch via `nohup` + #emph-text[return immediately]. Job survives disconnect], warn-color),
+    sep,
+    step("⑤", "easy-ssh pull path/", [Fetch results from server #sym.arrow.r laptop], ok-color),
+  )
+}
+
+#v(0.4em)
+
+#{
+  set align(center)
+  text(size: 0.9em)[
+    Also: `logs` (tail output) #sym.dot.c `monitor` (live stream) #sym.dot.c `status` (SSH + job state) #sym.dot.c `clean` (prune remote)
+  ]
+}
+
+// ============================================================
+
+== What Gets Ignored During Push
+
+#v(0.2em)
+
+`easy-ssh push` uses `rsync` under the hood. Three layers filter what gets synced:
+
+#v(0.2em)
+
+#{
+  let layer-box(num, title, detail, color) = rect(
+    width: 100%,
+    fill: color.lighten(90%),
+    stroke: 1.2pt + color,
+    radius: 6pt,
+    inset: (x: 0.8em, y: 0.35em),
+  )[
+    #text(weight: "bold", fill: color, size: 0.9em)[#num #title]
+    #v(0.15em)
+    #set text(size: 0.82em)
+    #detail
+  ]
+
+  stack(
+    dir: ttb,
+    spacing: 0.25em,
+    layer-box("①", "Default excludes (always skipped)",
+      [`.git/` and `.venv/` — hard-coded, no config needed],
+      emph-color),
+    layer-box("②", ".easy-ssh-ignore (your rules)",
+      [Same syntax as `.gitignore`. Example: #h(0.5em) #raw("__pycache__/  *.pyc  data/  *.h5  results/  node_modules/")],
+      ok-color),
+    layer-box("③", "500 MB safety guard",
+      [If effective sync size > 500 MB, push #warn-text[refuses]. Fix: add ignore patterns or use `--force`.],
+      warn-color),
+  )
+}
+
+#v(0.25em)
+
+#{
+  set align(center)
+  rect(fill: emph-color.lighten(90%), stroke: 1pt + emph-color, radius: 6pt, inset: (x: 1em, y: 0.3em))[
+    #set text(size: 0.82em)
+    #text(weight: "bold", fill: emph-color)[Tip:] Big datasets already on the server? Put them in `.easy-ssh-ignore`. \
+    #text(weight: "bold", fill: warn-color)[Cleanup:] `push --clean` previews remote-only deletions; add `--force` to execute.
+  ]
+}
+
+// ============================================================
+
+== Live Demo — MQT YAQS on a800 (Python)
+#v(0.2em)
+Real run: noisy analog simulation of an Ising chain using #emph-text[MQT YAQS] (Tensor Jump Method).
+
+#v(0.2em)
+
+```bash
+easy-ssh init   # host='a800'  remote_dir='/home/yushengzhao/yaqs'
+echo -e "__pycache__/\n*.pyc\ndata/\nresults/" > .easy-ssh-ignore
+easy-ssh run "uv run python examples/analog_sim.py"
+easy-ssh pull results/heatmap.png
+```
+
+#v(0.5em)
+
+#{
+  set align(center)
+  rect(
+    width: 80%,
+    fill: ok-color.lighten(88%),
+    stroke: 2pt + ok-color,
+    radius: 10pt,
+    inset: (x: 1.5em, y: 0.7em),
+  )[
+    #set align(center)
+    #text(size: 1.3em, weight: "bold", fill: ok-color)[#emoji.sparkles Key point] #v(0.3em)
+    #text(size: 1.1em)[Zero setup on server — no API keys, no proxy, no conda env headaches.]
+  ]
+}
+
+// ============================================================
+
 == Live Demo - Julia Quantum Simulation on a800
 #v(0.8em)
 A real run: pulse simulation for three qubit gate (PulseODE.jl).
