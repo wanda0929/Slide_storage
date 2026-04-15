@@ -1038,8 +1038,8 @@
   // ── Title ──
   content((-1.0, 4.5), anchor: "west",
     text(weight: "bold", size: 15pt)[(d)])
-  content((1.2, 4.5), anchor: "west",
-    text(weight: "bold", size: 15pt)[Single-Plaquette Circuit])
+  content((0.4, 4.5), anchor: "west",
+    text(weight: "bold", size: 15pt)[Error-correction Cycle])
 
   // ══════════════════════════════
   //  COORDINATES
